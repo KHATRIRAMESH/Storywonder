@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import { apiCall } from '@/lib/api';
 
@@ -8,7 +8,7 @@ import { apiCall } from '@/lib/api';
 export function useApiCall() {
   const { getToken } = useAuth();
 
-  const apiCallWithAuth = async (
+  const apiCallWithAuth = useCallback(async (
     endpoint: string,
     options: RequestInit = {}
   ) => {
@@ -19,7 +19,7 @@ export function useApiCall() {
       console.error('Authenticated API call failed:', error);
       throw error;
     }
-  };
+  }, [getToken]);
 
   return { apiCall: apiCallWithAuth };
 }
@@ -27,11 +27,18 @@ export function useApiCall() {
 // Hook for fetching data from your API server
 export function useApiData<T>(endpoint: string) {
   const [data, setData] = useState<T | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { apiCall: apiCallWithAuth } = useApiCall();
 
   useEffect(() => {
+    if (!endpoint) {
+      setLoading(false);
+      setError(null);
+      setData(null);
+      return;
+    }
+
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -40,6 +47,7 @@ export function useApiData<T>(endpoint: string) {
         setData(result);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
+        setData(null);
       } finally {
         setLoading(false);
       }
@@ -48,10 +56,25 @@ export function useApiData<T>(endpoint: string) {
     fetchData();
   }, [endpoint, apiCallWithAuth]);
 
-  const refetch = () => {
-    setLoading(true);
-    // Re-trigger the useEffect by updating a state
-  };
+  const refetch = useCallback(() => {
+    if (!endpoint) return;
+    
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const result = await apiCallWithAuth(endpoint);
+        setData(result);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+        setData(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [endpoint, apiCallWithAuth]);
 
   return { data, loading, error, refetch };
 }
@@ -62,7 +85,7 @@ export function useApiMutation() {
   const [error, setError] = useState<string | null>(null);
   const { apiCall: apiCallWithAuth } = useApiCall();
 
-  const mutate = async (
+  const mutate = useCallback(async (
     endpoint: string,
     options: RequestInit = {}
   ) => {
@@ -78,7 +101,7 @@ export function useApiMutation() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [apiCallWithAuth]);
 
   return { mutate, loading, error };
 }

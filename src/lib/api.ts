@@ -4,6 +4,12 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 export const apiConfig = {
   baseUrl: API_BASE_URL,
   endpoints: {
+    auth: {
+      verify: '/api/auth/verify',
+      profile: '/api/auth/profile',
+      subscription: '/api/auth/subscription',
+      stats: '/api/auth/stats',
+    },
     stories: '/api/stories',
     users: '/api/users',
     admin: '/api/admin',
@@ -17,6 +23,8 @@ export async function apiCall(
   token?: string
 ) {
   const url = `${API_BASE_URL}${endpoint}`;
+  
+  console.log(`[API Call] ${options.method || 'GET'} ${url}`);
   
   const defaultHeaders: HeadersInit = {
     'Content-Type': 'application/json',
@@ -35,10 +43,21 @@ export async function apiCall(
   };
 
   try {
-    const response = await fetch(url, config);
+    // Create a promise that rejects after 10 seconds
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Request timeout')), 10000);
+    });
+
+    const response = await Promise.race([
+      fetch(url, config),
+      timeoutPromise
+    ]);
+    
+    console.log(`[API Response] ${url} - Status: ${response.status}`);
     
     if (!response.ok) {
-      throw new Error(`API call failed: ${response.status} ${response.statusText}`);
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      throw new Error(errorData.message || `API call failed: ${response.status} ${response.statusText}`);
     }
 
     const contentType = response.headers.get('content-type');
@@ -48,7 +67,17 @@ export async function apiCall(
     
     return await response.text();
   } catch (error) {
-    console.error('API call error:', error);
+    console.error(`[API Error] ${url}:`, error);
+    
+    if (error instanceof Error) {
+      if (error.message === 'Request timeout') {
+        throw new Error('Request timeout - please check your backend server');
+      }
+      if (error.message.includes('Failed to fetch') || error.message.includes('fetch')) {
+        throw new Error('Unable to connect to backend server. Please ensure it is running on port 8000.');
+      }
+    }
+    
     throw error;
   }
 }
