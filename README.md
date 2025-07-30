@@ -1,36 +1,173 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# StoryWonderbook
 
-## Getting Started
+Create magical, personalized storybooks for children with AI-powered story generation and character matching.
 
-First, run the development server:
+## 🚀 Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **AI-Powered Stories**: Advanced AI creates unique, engaging stories tailored to your preferences
+- **Personalized Characters**: Create stories featuring your child as the main character
+- **Family Friendly**: Safe, age-appropriate content that parents can trust
+- **Responsive Design**: Works beautifully on all devices
+- **Secure Authentication**: Powered by Clerk for secure user management
+
+## 🛠️ Tech Stack
+
+- **Framework**: Next.js 15.4.5 with App Router
+- **Authentication**: Clerk
+- **Styling**: Tailwind CSS
+- **UI Components**: shadcn/ui
+- **Icons**: Lucide React
+- **TypeScript**: Full type safety
+- **Build Tool**: Turbopack
+
+## 🏗️ Project Structure
+
+```
+src/
+├── app/                    # Next.js App Router pages
+│   ├── layout.tsx         # Root layout with Header & Footer
+│   ├── page.tsx          # Landing page
+│   ├── dashboard/        # User dashboard (protected)
+│   ├── create-story/     # Story creation (protected)
+│   ├── admin/           # Admin panel (protected)
+│   ├── sign-in/         # Authentication pages
+│   └── sign-up/
+├── components/           # React components
+│   ├── Header.tsx       # Navigation header
+│   ├── Footer.tsx       # Site footer
+│   └── ui/             # shadcn/ui components
+├── hooks/               # Custom React hooks
+│   └── useAuth.ts      # Authentication hook
+├── lib/                # Utility functions
+│   └── utils.ts
+└── types/              # TypeScript type definitions
+    └── index.ts
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🚀 Getting Started
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Prerequisites
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Node.js 18+ 
+- npm or yarn
+- Clerk account for authentication
 
-## Learn More
+### Installation
 
-To learn more about Next.js, take a look at the following resources:
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd storybook
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+2. Install dependencies:
+```bash
+npm install
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+3. Set up environment variables:
+```bash
+cp .env.example .env.local
+```
 
-## Deploy on Vercel
+Fill in your Clerk credentials in `.env.local`:
+```env
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_publishable_key
+CLERK_SECRET_KEY=your_secret_key
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/dashboard
+NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/dashboard
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+4. Start the development server:
+```bash
+npm run dev
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Open [http://localhost:3000](http://localhost:3000) to view the application.
+
+## 📝 Available Scripts
+
+- `npm run dev` - Start development server with Turbopack
+- `npm run build` - Build for production
+- `npm start` - Start production server
+- `npm run lint` - Run ESLint
+
+## 🔐 Authentication
+
+The application uses Clerk for authentication with the following features:
+
+- Secure sign-in/sign-up flow
+- Protected routes with middleware
+- User profile management
+- Role-based access control (admin features)
+
+### Protected Routes
+
+- `/dashboard` - User dashboard
+- `/create-story` - Story creation interface
+- `/admin` - Admin panel (requires admin role)
+
+## 🎨 UI Components
+
+Built with shadcn/ui for consistent, accessible components:
+
+- Button variants and sizes
+- Dropdown menus
+- Avatar components
+- Responsive navigation
+- Form components
+
+## 🔧 Configuration
+
+### Middleware
+
+Route protection is handled by `middleware.ts` which:
+- Protects authenticated routes
+- Redirects unauthenticated users
+- Handles role-based access
+
+### TypeScript
+
+Full TypeScript support with:
+- Custom type definitions in `src/types/`
+- Strict type checking
+- Extended user interface for application-specific data
+
+## 🚀 Deployment
+
+### Vercel (Recommended)
+
+1. Push your code to GitHub
+2. Connect your repository to Vercel
+3. Add environment variables in Vercel dashboard
+4. Deploy!
+
+### Other Platforms
+
+The application can be deployed to any platform that supports Next.js:
+- Netlify
+- Railway
+- DigitalOcean App Platform
+- AWS Amplify
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+## 🙋‍♂️ Support
+
+For support, please open an issue on GitHub or contact our team.
+
+---
+
+Made with ❤️ for children everywhere
