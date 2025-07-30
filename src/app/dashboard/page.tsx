@@ -1,37 +1,89 @@
-'use client';
+"use client";
 
-import { useApiData } from '@/hooks/useApi';
-import { useAuth } from '@/hooks/useAuth';
-import { useBackendProfile, useUserStats, useAuthVerification } from '@/hooks/useAuthenticatedFetch';
-import { Loader2, BookOpen, Plus, AlertTriangle, CheckCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
+import { useApiData } from "@/hooks/useApi";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  useBackendProfile,
+  useUserStats,
+  useAuthVerification,
+} from "@/hooks/useAuthenticatedFetch";
+import {
+  Loader2,
+  BookOpen,
+  Plus,
+  AlertTriangle,
+  CheckCircle,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import StoryReaderModal from "@/components/StoryReaderModal";
+import Link from "next/link";
+import { useState } from "react";
 
 interface Story {
-  id: string;
+  id: number;
+  userId: string;
   title: string;
-  content: string;
+  childName: string;
+  childAge: number;
+  childGender: string;
+  interests: string[];
+  theme: string;
+  setting: string | null;
+  companions: string[];
+  pageCount: number;
+  childImageUrl: string | null;
+  status: "generating" | "completed" | "failed";
+  pdfUrl: string | null;
+  thumbnailUrl: string | null;
+  metadata: Record<string, unknown> | null;
   createdAt: string;
   updatedAt: string;
 }
 
 export default function Dashboard() {
   const { isSignedIn } = useAuth();
-  const { authStatus, loading: authLoading, error: authError } = useAuthVerification();
-  const { profile, loading: profileLoading, error: profileError } = useBackendProfile();
+  const {
+    authStatus,
+    loading: authLoading,
+    error: authError,
+  } = useAuthVerification();
+  const {
+    profile,
+    loading: profileLoading,
+    error: profileError,
+  } = useBackendProfile();
   const { stats, loading: statsLoading, error: statsError } = useUserStats();
-  
+
+  // Story reader modal state
+  const [selectedStory, setSelectedStory] = useState<Story | null>(null);
+  const [isReaderOpen, setIsReaderOpen] = useState(false);
+
   // Only load stories if backend authentication is successful
-  const shouldLoadStories = isSignedIn && !authError && !profileError && authStatus;
-  const { data: stories, loading: storiesLoading, error: storiesError } = useApiData<Story[]>(
-    shouldLoadStories ? '/api/stories' : ''
-  );
+  const shouldLoadStories =
+    isSignedIn && !authError && !profileError && authStatus;
+  const {
+    data: stories,
+    loading: storiesLoading,
+    error: storiesError,
+  } = useApiData<Story[]>(shouldLoadStories ? "/api/stories" : "");
+
+  const openStoryReader = (story: Story) => {
+    setSelectedStory(story);
+    setIsReaderOpen(true);
+  };
+
+  const closeStoryReader = () => {
+    setIsReaderOpen(false);
+    setSelectedStory(null);
+  };
 
   if (!isSignedIn) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <p className="text-gray-600">Please sign in to view your dashboard.</p>
+          <p className="text-gray-600">
+            Please sign in to view your dashboard.
+          </p>
         </div>
       </div>
     );
@@ -61,16 +113,15 @@ export default function Dashboard() {
             Backend Connection Error
           </h2>
           <p className="text-gray-600 mb-4">
-            Unable to connect to the backend server. Please make sure your backend is running on port 8000.
+            Unable to connect to the backend server. Please make sure your
+            backend is running on port 8000.
           </p>
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4 text-left">
             <p className="text-red-700 text-sm">
               <strong>Error:</strong> {authError || profileError}
             </p>
           </div>
-          <Button onClick={() => window.location.reload()}>
-            Try Again
-          </Button>
+          <Button onClick={() => window.location.reload()}>Try Again</Button>
         </div>
       </div>
     );
@@ -78,23 +129,10 @@ export default function Dashboard() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Backend Connection Status */}
-      <div className="mb-6">
-        <div className="flex items-center space-x-2 text-sm">
-          <CheckCircle className="w-4 h-4 text-green-500" />
-          <span className="text-green-700">Connected to backend server</span>
-          {authStatus && (
-            <span className="text-gray-500">
-              • User ID: {authStatus.userId}
-            </span>
-          )}
-        </div>
-      </div>
-
       {/* Welcome Section */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Welcome back, {profile?.firstName || 'User'}!
+          Welcome back, {profile?.firstName || "User"}!
         </h1>
         <p className="text-gray-600">
           Manage your stories and create new magical adventures.
@@ -107,64 +145,70 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid md:grid-cols-4 gap-6 mb-8">
+      <div className="grid md:grid-cols-3 gap-6 mb-8">
         <div className="bg-white rounded-xl shadow-sm border p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Stories Generated</p>
               <p className="text-2xl font-bold text-gray-900">
-                {profileLoading || statsLoading ? '...' : stats?.storiesGenerated || profile?.storiesGenerated || 0}
+                {profileLoading || statsLoading
+                  ? "..."
+                  : stats?.storiesGenerated || profile?.storiesGenerated || 0}
               </p>
             </div>
             <BookOpen className="w-8 h-8 text-blue-600" />
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-xl shadow-sm border p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Subscription</p>
-              <p className="text-2xl font-bold text-gray-900 capitalize">
-                {profile?.subscriptionLevel || stats?.subscriptionLevel || 'Free'}
-              </p>
-            </div>
-            <div className={`w-8 h-8 rounded-full ${
-              (profile?.subscriptionLevel === 'premium' || stats?.subscriptionLevel === 'premium') 
-                ? 'bg-gradient-to-r from-purple-600 to-pink-600'
-                : (profile?.subscriptionLevel === 'pro' || stats?.subscriptionLevel === 'pro')
-                ? 'bg-gradient-to-r from-blue-600 to-purple-600'
-                : 'bg-gray-300'
-            }`}></div>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-xl shadow-sm border p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Stories Limit</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {statsLoading ? '...' : stats?.subscriptionFeatures?.storiesPerMonth || 'Unlimited'}
-              </p>
-            </div>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-              stats?.hasReachedStoryLimit ? 'bg-red-100' : 'bg-green-100'
-            }`}>
-              <span className={`font-bold text-sm ${
-                stats?.hasReachedStoryLimit ? 'text-red-600' : 'text-green-600'
-              }`}>
-                {stats?.hasReachedStoryLimit ? '!' : '✓'}
-              </span>
-            </div>
           </div>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Backend Status</p>
-              <p className="text-lg font-bold text-green-600">Connected</p>
+              <p className="text-sm text-gray-600">Subscription</p>
+              <p className="text-2xl font-bold text-gray-900 capitalize">
+                {profile?.subscriptionLevel ||
+                  stats?.subscriptionLevel ||
+                  "Free"}
+              </p>
             </div>
-            <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
+            <div
+              className={`w-8 h-8 rounded-full ${
+                profile?.subscriptionLevel === "premium" ||
+                stats?.subscriptionLevel === "premium"
+                  ? "bg-gradient-to-r from-purple-600 to-pink-600"
+                  : profile?.subscriptionLevel === "pro" ||
+                    stats?.subscriptionLevel === "pro"
+                  ? "bg-gradient-to-r from-blue-600 to-purple-600"
+                  : "bg-gray-300"
+              }`}
+            ></div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Stories Limit</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {statsLoading
+                  ? "..."
+                  : stats?.subscriptionFeatures?.storiesPerMonth || "Unlimited"}
+              </p>
+            </div>
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                stats?.hasReachedStoryLimit ? "bg-red-100" : "bg-green-100"
+              }`}
+            >
+              <span
+                className={`font-bold text-sm ${
+                  stats?.hasReachedStoryLimit
+                    ? "text-red-600"
+                    : "text-green-600"
+                }`}
+              >
+                {stats?.hasReachedStoryLimit ? "!" : "✓"}
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -173,9 +217,12 @@ export default function Dashboard() {
       {(statsError || storiesError) && (
         <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
           <p className="text-yellow-700 text-sm">
-            <strong>Warning:</strong> Some data couldn&apos;t be loaded from the backend.
+            <strong>Warning:</strong> Some data couldn&apos;t be loaded from the
+            backend.
             {statsError && <span className="block">Stats: {statsError}</span>}
-            {storiesError && <span className="block">Stories: {storiesError}</span>}
+            {storiesError && (
+              <span className="block">Stories: {storiesError}</span>
+            )}
           </p>
         </div>
       )}
@@ -184,20 +231,25 @@ export default function Dashboard() {
       <div className="bg-white rounded-xl shadow-sm border">
         <div className="p-6 border-b">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900">Your Stories</h2>
+            <h2 className="text-xl font-semibold text-gray-900">
+              Your Stories
+            </h2>
             <Link href="/create-story">
-              <Button 
+              <Button
                 className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                 disabled={stats?.hasReachedStoryLimit}
               >
                 <Plus className="w-4 h-4 mr-2" />
-                {stats?.hasReachedStoryLimit ? 'Limit Reached' : 'Create New Story'}
+                {stats?.hasReachedStoryLimit
+                  ? "Limit Reached"
+                  : "Create New Story"}
               </Button>
             </Link>
           </div>
           {stats?.hasReachedStoryLimit && (
             <p className="text-sm text-red-600 mt-2">
-              You&apos;ve reached your monthly story limit. Upgrade your plan to create more stories.
+              You&apos;ve reached your monthly story limit. Upgrade your plan to
+              create more stories.
             </p>
           )}
         </div>
@@ -206,15 +258,17 @@ export default function Dashboard() {
           {storiesLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
-              <span className="ml-2 text-gray-600">Loading your stories...</span>
+              <span className="ml-2 text-gray-600">
+                Loading your stories...
+              </span>
             </div>
           ) : storiesError ? (
             <div className="text-center py-8">
               <p className="text-gray-600 mb-4">
                 Unable to load stories from the backend server.
               </p>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => window.location.reload()}
               >
                 Try Again
@@ -230,7 +284,7 @@ export default function Dashboard() {
                 Create your first magical story to get started!
               </p>
               <Link href="/create-story">
-                <Button 
+                <Button
                   className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                   disabled={stats?.hasReachedStoryLimit}
                 >
@@ -242,22 +296,57 @@ export default function Dashboard() {
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {stories.map((story) => (
-                <div 
-                  key={story.id} 
+                <div
+                  key={story.id}
                   className="border rounded-lg p-4 hover:shadow-md transition-shadow"
                 >
                   <h3 className="font-semibold text-gray-900 mb-2">
                     {story.title}
                   </h3>
-                  <p className="text-gray-600 text-sm mb-3 line-clamp-3">
-                    {story.content.substring(0, 150)}...
-                  </p>
+                  <div className="text-gray-600 text-sm mb-3">
+                    <p>
+                      <strong>Child:</strong> {story.childName},{" "}
+                      {story.childAge} years old
+                    </p>
+                    <p>
+                      <strong>Theme:</strong> {story.theme}
+                    </p>
+                    <p>
+                      <strong>Status:</strong>
+                      <span
+                        className={`ml-1 px-2 py-1 rounded-full text-xs ${
+                          story.status === "completed"
+                            ? "bg-green-100 text-green-800"
+                            : story.status === "generating"
+                            ? "bg-blue-100 text-blue-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {story.status}
+                      </span>
+                    </p>
+                    <p>
+                      <strong>Pages:</strong> {story.pageCount}
+                    </p>
+                  </div>
                   <div className="flex items-center justify-between text-xs text-gray-500">
                     <span>
                       Created: {new Date(story.createdAt).toLocaleDateString()}
                     </span>
-                    <Button variant="outline" size="sm">
-                      View
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openStoryReader(story)}
+                      disabled={
+                        story.status !== "completed" &&
+                        story.status !== "generating"
+                      }
+                    >
+                      {story.status === "completed"
+                        ? "Read"
+                        : story.status === "generating"
+                        ? "Preview"
+                        : "View"}
                     </Button>
                   </div>
                 </div>
@@ -266,6 +355,15 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {/* Story Reader Modal */}
+      {selectedStory && (
+        <StoryReaderModal
+          isOpen={isReaderOpen}
+          onClose={closeStoryReader}
+          story={selectedStory}
+        />
+      )}
     </div>
   );
 }
