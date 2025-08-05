@@ -1,29 +1,25 @@
 'use client';
 
-import { useUser, useClerk } from '@clerk/nextjs';
-import { ExtendedUser } from '@/types';
+import { useAuth as useAuthContext } from '@/contexts/AuthContext';
 
 export function useAuth() {
-  const { user, isSignedIn } = useUser();
-  const { signOut: clerkSignOut } = useClerk();
-
-  // Check if user is a backend user (stored in localStorage)
-  const isBackendUser = typeof window !== 'undefined' ? !!localStorage.getItem("backendUser") : false;
-
-  const handleSignOut = async () => {
-    if (isBackendUser) {
-      // Handle backend user signout
-      localStorage.removeItem("backendUser");
-      // You might want to call a custom signout function here
-    } else {
-      await clerkSignOut();
-    }
-  };
-
+  const context = useAuthContext();
+  
   return {
-    user: user as ExtendedUser,
-    isSignedIn,
-    isBackendUser,
-    signOut: handleSignOut,
+    // Current Passport.js backend authentication properties
+    user: context.user,
+    isLoading: context.isLoading,
+    isAuthenticated: context.isAuthenticated,
+    login: context.login,
+    register: context.register,
+    logout: context.logout,
+    refreshUser: context.refreshUser,
+    
+    // Legacy aliases for backward compatibility with Clerk-based components
+    isSignedIn: context.isAuthenticated,
+    signOut: context.logout,
+    
+    // Additional backward compatibility properties
+    isLoaded: !context.isLoading,
   };
 }
